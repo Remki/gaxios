@@ -111,16 +111,18 @@ export class GaxiosError<T = any> extends Error {
     }
 
     if (this.response) {
-      try {
-        this.response.data = translateData(
-          this.config.responseType,
-          // workaround for `node-fetch`'s `.data` deprecation...
-          this.response?.bodyUsed ? this.response?.data : undefined,
-        );
-      } catch {
-        // best effort - don't throw an error within an error
-        // we could set `this.response.config.responseType = 'unknown'`, but
-        // that would mutate future calls with this config object.
+      if (config.shouldTranslateGaxiosErrorMessage) {
+        try {
+          this.response.data = translateData(
+            this.config.responseType,
+            // workaround for `node-fetch`'s `.data` deprecation...
+            this.response?.bodyUsed ? this.response?.data : undefined,
+          );
+        } catch {
+          // best effort - don't throw an error within an error
+          // we could set `this.response.config.responseType = 'unknown'`, but
+          // that would mutate future calls with this config object.
+        }
       }
 
       this.status = this.response.status;
@@ -343,6 +345,11 @@ export interface GaxiosOptions extends RequestInit {
    * @experimental
    */
   errorRedactor?: typeof defaultErrorRedactor | false;
+
+  /**
+   * When enabled, it returns parsed GaxiosError object after receiving error. Otherwise, it returns error in the type defined in the `responseType`.
+   */
+  shouldTranslateGaxiosErrorMessage?: boolean;
 }
 
 export interface GaxiosOptionsPrepared extends GaxiosOptions {
